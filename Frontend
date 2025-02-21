@@ -1,0 +1,71 @@
+"use client";
+
+import { useState } from "react";
+import axios from "axios";
+import Select from "react-select";
+
+export default function Home() {
+    const [jsonInput, setJsonInput] = useState("");
+    const [responseData, setResponseData] = useState(null);
+    const [selectedFilters, setSelectedFilters] = useState([]);
+
+    const handleSubmit = async () => {
+        try {
+            const parsedData = JSON.parse(jsonInput);
+            const response = await axios.post("https://my-bfhl-backend.herokuapp.com/bfhl", parsedData);
+            setResponseData(response.data);
+        } catch (error) {
+            alert("Invalid JSON or server error");
+        }
+    };
+
+    const filterOptions = [
+        { label: "Alphabets", value: "alphabets" },
+        { label: "Numbers", value: "numbers" },
+        { label: "Highest Alphabet", value: "highest_alphabet" }
+    ];
+
+    const handleFilterChange = (selectedOptions) => {
+        setSelectedFilters(selectedOptions.map(option => option.value)); // Extract values
+    };
+
+    const renderResponse = () => {
+        if (!responseData) return null;
+
+        const filteredData = {};
+        selectedFilters.forEach(filter => {
+            if (responseData[filter]) {
+                filteredData[filter] = responseData[filter];
+            }
+        });
+
+        return <pre>{JSON.stringify(filteredData, null, 2)}</pre>;
+    };
+
+    return (
+        <div style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
+            <h1>Home Loan Prediction API</h1>
+            <textarea
+                rows={5}
+                cols={50}
+                placeholder='Enter JSON (e.g. { "data": ["A", "C", "z"] })'
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+            />
+            <br />
+            <button onClick={handleSubmit}>Submit</button>
+            <br /><br />
+            {responseData && (
+                <>
+                    <Select
+                        isMulti
+                        options={filterOptions}
+                        onChange={handleFilterChange} // Use fixed handler
+                    />
+                    <br />
+                    {renderResponse()}
+                </>
+            )}
+        </div>
+    );
+}
