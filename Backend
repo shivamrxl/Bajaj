@@ -1,0 +1,61 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const app = express();
+
+app.use(bodyParser.json());
+app.use(cors());
+
+// Hardcoded user details
+const user_id = 'john_doe_17091999';
+const email = 'john@xyz.com';
+const roll_number = 'ABCD123';
+
+app.post('/bfhl', (req, res) => {
+  try {
+    const { data } = req.body;
+    if (!Array.isArray(data)) {
+      return res.status(400).json({ is_success: false, error: "Data must be an array" });
+    }
+
+    const numbers = [];
+    const alphabets = [];
+    data.forEach(item => {
+      if (typeof item === 'string') {
+        if (/^\d+$/.test(item)) {
+          numbers.push(item);
+        } else if (/^[a-zA-Z]$/.test(item)) {
+          alphabets.push(item);
+        }
+      }
+    });
+
+    let highestAlphabet = [];
+    if (alphabets.length > 0) {
+      const withUpper = alphabets.map(c => ({ original: c, upper: c.toUpperCase() }));
+      const maxUpperCode = Math.max(...withUpper.map(c => c.upper.charCodeAt(0)));
+      const candidates = withUpper.filter(c => c.upper.charCodeAt(0) === maxUpperCode);
+      const lastCandidate = candidates[candidates.length - 1];
+      highestAlphabet = [lastCandidate.original];
+    }
+
+    res.json({
+      is_success: true,
+      user_id,
+      email,
+      roll_number,
+      numbers,
+      alphabets,
+      highest_alphabet: highestAlphabet
+    });
+  } catch (error) {
+    res.status(500).json({ is_success: false, error: error.message });
+  }
+});
+
+app.get('/bfhl', (req, res) => {
+  res.status(200).json({ operation_code: 1 });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
